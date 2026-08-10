@@ -1,0 +1,70 @@
+{
+    "name": "syedmahamudul/laravel-stripe",
+    "description": "Complete Stripe Payment Gateway Integration for ALL Laravel & PHP Versions",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["stripe", "payment", "laravel", "gateway", "subscription", "ecommerce", "laravel5", "laravel6", "laravel7", "laravel8", "laravel9", "laravel10", "laravel11"],
+    "authors": [
+        {
+            "name": "Syed Mahamudul Hassan",
+            "email": "syedmahamudhassan@gmail.com",
+            "homepage": "https://github.com/syedmahamudul",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "syedmahamudhassan@gmail.com",
+        "issues": "https://github.com/syedmahamudul/laravel-stripe/issues",
+        "source": "https://github.com/syedmahamudul/laravel-stripe"
+    },
+    "autoload": {
+        "psr-4": {
+            "Syedmahamudul\\LaravelStripe\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Syedmahamudul\\LaravelStripe\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=7.0",
+        "ext-json": "*",
+        "ext-curl": "*",
+        "stripe/stripe-php": "^7.0|^8.0|^9.0|^10.0|^11.0|^12.0|^13.0|^14.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0|^8.0|^9.0|^10.0"
+    },
+    "suggest": {
+        "laravel/framework": "Required for Laravel integration (any version 5.5 - 11.x)",
+        "illuminate/support": "Required for Laravel integration (any version)",
+        "illuminate/contracts": "Required for Laravel integration (any version)",
+        "illuminate/http": "Required for Laravel integration (any version)",
+        "illuminate/routing": "Required for Laravel integration (any version)",
+        "illuminate/database": "Required for Laravel integration (any version)",
+        "orchestra/testbench": "Required for testing (any version)"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Syedmahamudul\\LaravelStripe\\Providers\\StripePaymentServiceProvider"
+            ],
+            "aliases": {
+                "StripePayment": "Syedmahamudul\\LaravelStripe\\Facades\\StripePayment"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
