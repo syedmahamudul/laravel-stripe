@@ -325,7 +325,7 @@ Create a payment form where customers can enter their order and billing informat
 Create a Blade view at:
 
 ```text
-resources/views/payment/index.blade.php
+resources/views/payment/confirm.blade.php
 ```
 
 
