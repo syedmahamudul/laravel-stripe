@@ -10,7 +10,7 @@
 [![composer.lock](https://poser.pugx.org/syedmahamudul/laravel-stripe/composerlock)](https://packagist.org/packages/syedmahamudul/laravel-stripe)
 [![PHP Version](https://img.shields.io/packagist/php-v/syedmahamudul/laravel-stripe)](https://packagist.org/packages/syedmahamudul/laravel-stripe)
 
-This package is built for [Stripe](https://www.stripe.com) online payment gateway in Bangladesh. It supports **Laravel 5.6+, 6.x, 7.x, 8.x, 9.x, 10.x, and 11.x, 12.x, 13.x** and works with **PHP 7.4 to 8.6+**.
+This package is built for [Stripe](https://www.stripe.com) online payment gateway. It supports **Laravel 5.6+, 6.x, 7.x, 8.x, 9.x, 10.x, and 11.x, 12.x, 13.x** and works with **PHP 7.4 to 8.6+**.
 
 ## 🚀 Features
 
