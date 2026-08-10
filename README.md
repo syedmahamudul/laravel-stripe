@@ -233,6 +233,257 @@ Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
 
 ```
 
+
+
+
+## Create the Payment Form
+
+Create a payment form where customers can enter their order and billing information before initiating the payment.
+
+Create a Blade view at:
+
+```text
+resources/views/payment/index.blade.php
+```
+
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Make Payment</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Make Payment</h4>
+                    </div>
+                    <div class="card-body">
+                        @if(session('error'))
+                            <div class="alert alert-danger">{{ session('error') }}</div>
+                        @endif
+
+                        <form action="{{ route('payment.process') }}" method="POST" id="payment-form">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Amount (USD)</label>
+                                <input type="number" class="form-control @error('amount') is-invalid @enderror" 
+                                       id="amount" name="amount" step="0.01" min="0.5" required>
+                                @error('amount')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                                       id="name" name="name" required>
+                                @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                       id="email" name="email" required>
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="product_name" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="product_name" name="product_name">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Pay Now</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+
+
+
+
+
+## Create Confirm Payment Form
+
+Create a payment form where customers can enter their order and billing information before initiating the payment.
+
+Create a Blade view at:
+
+```text
+resources/views/payment/index.blade.php
+```
+
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Confirm Payment</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        .payment-card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .payment-header {
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+        }
+        .stripe-element {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        #payment-element {
+            min-height: 100px;
+        }
+        .btn-pay {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        .btn-pay:disabled {
+            opacity: 0.7;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card payment-card">
+                    <div class="payment-header text-center">
+                        <h4><i class="fas fa-lock me-2"></i> Complete Payment</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info">
+                            <div class="d-flex justify-content-between">
+                                <span><strong>Amount:</strong></span>
+                                <span>
+                                    @if(function_exists('format_currency'))
+                                        {{ format_currency($amount, $currency) }}
+                                    @else
+                                        {{ number_format($amount, 2) }} {{ strtoupper($currency) }}
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span><strong>Currency:</strong></span>
+                                <span>{{ strtoupper($currency) }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Card Details</label>
+                            <div class="stripe-element">
+                                <div id="payment-element"></div>
+                            </div>
+                        </div>
+
+                        <button id="submit-button" class="btn btn-success w-100 btn-pay">
+                            <i class="fas fa-lock me-2"></i>Pay Now
+                        </button>
+                        <div id="error-message" class="mt-3 text-danger"></div>
+                        
+                        <div class="mt-3 text-center">
+                            <a href="{{ route('payment.cancel') }}" class="text-decoration-none text-muted">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stripe = Stripe('{{ config('stripe.api_key') }}');
+            const clientSecret = '{{ $clientSecret }}';
+
+            const elements = stripe.elements({
+                clientSecret: clientSecret,
+                appearance: {
+                    theme: 'stripe',
+                    variables: {
+                        colorPrimary: '#0d6efd',
+                        colorBackground: '#ffffff',
+                        colorText: '#212529',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        borderRadius: '8px',
+                    },
+                },
+            });
+
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+
+            const submitButton = document.getElementById('submit-button');
+            const errorElement = document.getElementById('error-message');
+
+            submitButton.addEventListener('click', async () => {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                errorElement.textContent = '';
+
+                try {
+                    const { error } = await stripe.confirmPayment({
+                        elements,
+                        confirmParams: {
+                            return_url: '{{ route('payment.success') }}',
+                        },
+                    });
+
+                    if (error) {
+                        errorElement.textContent = error.message;
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Now';
+                    }
+                    // If no error, Stripe will redirect to return_url
+                    
+                } catch (err) {
+                    errorElement.textContent = 'An unexpected error occurred. Please try again.';
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Now';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+
+
+
 ### Process Payment
 
 Create a controller to handle Stripe payment requests and callback responses.
@@ -606,83 +857,6 @@ return new class extends Migration
 
 > **Note:** The order data is stored temporarily and should only be persisted to the `orders` table after the payment is completed successfully.
 
-
-## Create the Payment Form
-
-Create a payment form where customers can enter their order and billing information before initiating the payment.
-
-Create a Blade view at:
-
-```text
-resources/views/payment/index.blade.php
-```
-
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Make Payment</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Make Payment</h4>
-                    </div>
-                    <div class="card-body">
-                        @if(session('error'))
-                            <div class="alert alert-danger">{{ session('error') }}</div>
-                        @endif
-
-                        <form action="{{ route('payment.process') }}" method="POST" id="payment-form">
-                            @csrf
-                            <div class="mb-3">
-                                <label for="amount" class="form-label">Amount (USD)</label>
-                                <input type="number" class="form-control @error('amount') is-invalid @enderror" 
-                                       id="amount" name="amount" step="0.01" min="0.5" required>
-                                @error('amount')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Full Name</label>
-                                <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" name="name" required>
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" name="email" required>
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="product_name" class="form-label">Product Name</label>
-                                <input type="text" class="form-control" id="product_name" name="product_name">
-                            </div>
-
-                            <button type="submit" class="btn btn-primary w-100">Pay Now</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-```
 
 ### Clear Cache
 
