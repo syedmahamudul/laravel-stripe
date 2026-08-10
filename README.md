@@ -634,6 +634,41 @@ public function success(Request $request)
     }
 ```
 
+
+
+### Show Payment Success
+
+Create a controller to handle Stripe payment requests and callback responses.
+
+```php
+<?php
+ public function showSuccess($paymentId)
+    {
+        try {
+            $payment = Payment::findOrFail($paymentId);
+            
+            return view('payment.success', [
+                'payment' => $payment,
+                'paymentId' => $payment->id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'paymentIntentId' => $payment->payment_intent_id,
+                'status' => $payment->status,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error showing success page: ' . $e->getMessage());
+            return view('payment.success_redirect', [
+                'paymentIntentId' => null,
+                'status' => 'succeeded',
+                'amount' => 0,
+                'currency' => config('stripe.currency', 'usd'),
+            ]);
+        }
+    }
+```
+
+
 ### Cancel Payment
 
 Create a controller to handle Stripe payment requests and callback responses.
